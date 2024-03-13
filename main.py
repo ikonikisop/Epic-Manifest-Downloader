@@ -177,10 +177,14 @@ class MainWindow(QMainWindow):
 
         self.show()
 
+
     def select_manifest(self):
-        manifest_path, _ = QFileDialog.getOpenFileName(self, "Select Manifest")
+        manifest_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Manifest", filter="Manifest File (*.manifest)"
+        )
         self.manifest_location_edit.setText(manifest_path)
         logging.getLogger().info(f"Selected manifest: {manifest_path}")
+
 
     def browse_download_location(self):
         download_dir = QFileDialog.getExistingDirectory(
