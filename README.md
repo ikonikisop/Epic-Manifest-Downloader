@@ -11,4 +11,4 @@
 Feel free to reach out if you encounter any issues or have any questions.
 
 # Testing Functionality 9:04 PM - 3/13/24
-Functionality: Works.
+Functionality: Functional
