@@ -25,8 +25,6 @@ from legendary.models.json_manifest import JSONManifest
 from legendary.downloader.mp.manager import DLManager
 from legendary.models.downloading import UIUpdate
 
-# Utility Classes
-
 class WorkInfo:
     def __init__(self, base_url="", manifest="", download_location=""):
         self.base_url = base_url
@@ -39,8 +37,6 @@ class UpdateProgress:
 
     def put(self, item, timeout=None):
         self.callback(item)
-
-# Download Thread
 
 class DownloadThread(QThread):
     progress_signal = pyqtSignal(float, float, float, float)
@@ -60,21 +56,17 @@ class DownloadThread(QThread):
         )
 
     def run(self):
-        if self.url_regex.match(self.work_info.manifest):
-            logging.info("Downloading manifest from URL...")
-            try:
+        try:
+            if self.url_regex.match(self.work_info.manifest):
+                logging.info("Downloading manifest from URL...")
                 resp = requests.get(self.work_info.manifest, stream=True)
                 data = resp.content
-            except requests.RequestException as e:
-                logging.error(f"Error Downloading Manifest: {e}")
-                return
-        else:
-            try:
-                with open(self.work_info.manifest, "rb") as f:
-                    data = f.read()
-            except FileNotFoundError:
-                logging.error("Manifest File Not Found.")
-                return
+            else:
+                with open(self.work_info.manifest, "rb") as manifest_file:
+                    data = manifest_file.read()
+        except (requests.RequestException, FileNotFoundError) as e:
+            logging.error(f"Error: {e}")
+            return
 
         try:
             manifest = Manifest.read_all(data)
@@ -82,7 +74,7 @@ class DownloadThread(QThread):
             try:
                 manifest = JSONManifest.read_all(data)
             except Exception as e:
-                logging.error(f"Error Parsing Manifest: {e}")
+                logging.error(f"Error: {e}")
                 return
 
         self.manager.run_analysis(manifest, None, processing_optimization=False)
@@ -107,8 +99,6 @@ class DownloadThread(QThread):
     def kill(self):
         import signal
         os.kill(self.manager._parent_pid, signal.SIGTERM)
-
-# Main Window
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -223,8 +213,9 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(0)
         self.progress_label.setText("Download Finished!")
         self.speed_label.setText("")
-        self.download_thread.manager.running = False
-        self.download_thread.kill()
+        if self.download_thread:
+            self.download_thread.manager.running = False
+            self.download_thread.kill()
 
     def write_to_console(self, text: str):
         text = text[:-1] if text.endswith("\n") else text
