@@ -191,8 +191,21 @@ class MainWindow(QMainWindow):
         self.download_location_edit.setText(download_dir)
 
     def download_file(self):
-        # The download button will do nothing when pressed
-        pass
+        url = self.url_edit.text()
+        manifest_path = self.manifest_location_edit.text()
+        dest_dir = self.download_location_edit.text()
+
+        if not url or not manifest_path or not dest_dir:
+            self.write_to_console("Please Fill Out All Fields.")
+            return
+
+        work_info = WorkInfo(url, manifest_path, dest_dir)
+
+        self.download_thread = DownloadThread(url, work_info)
+        self.download_thread.progress_signal.connect(self.update_progress)
+        self.download_thread.finished.connect(self.download_finished)
+        self.download_thread.start()
+        self.download_button.setEnabled(False)
 
     def update_progress(self, progress_percent, speed, read_speed, write_speed):
         self.progress_bar.setValue(int(progress_percent))
