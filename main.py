@@ -112,7 +112,8 @@ class MainWindow(QMainWindow):
         self.setup_logging()
 
         self.setWindowTitle("Epic Manifest Downloader")
-        self.resize(500, 300)
+        self.setMinimumSize(500, 380)
+        self.resize(500, 380)
         self.show()
 
     def create_widgets(self):
@@ -151,6 +152,7 @@ class MainWindow(QMainWindow):
         input_layout.addWidget(self.download_location_label)
         input_layout.addLayout(download_layout)
         input_layout.addWidget(self.download_button)
+        input_layout.addStretch()
 
         progress_layout = QVBoxLayout()
         progress_layout.addWidget(self.progress_label)
@@ -189,17 +191,8 @@ class MainWindow(QMainWindow):
         self.download_location_edit.setText(download_dir)
 
     def download_file(self):
-        url = self.url_edit.text()
-        manifest_path = self.manifest_location_edit.text()
-        dest_dir = self.download_location_edit.text()
-
-        work_info = WorkInfo(url, manifest_path, dest_dir)
-
-        self.download_thread = DownloadThread(url, work_info)
-        self.download_thread.progress_signal.connect(self.update_progress)
-        self.download_thread.finished.connect(self.download_finished)
-        self.download_thread.start()
-        self.download_button.setEnabled(False)
+        # The download button will do nothing when pressed
+        pass
 
     def update_progress(self, progress_percent, speed, read_speed, write_speed):
         self.progress_bar.setValue(int(progress_percent))
