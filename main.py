@@ -25,6 +25,8 @@ from legendary.models.json_manifest import JSONManifest
 from legendary.downloader.mp.manager import DLManager
 from legendary.models.downloading import UIUpdate
 
+# Utility Classes
+
 class WorkInfo:
     def __init__(self, base_url="", manifest="", download_location=""):
         self.base_url = base_url
@@ -37,6 +39,8 @@ class UpdateProgress:
 
     def put(self, item, timeout=None):
         self.callback(item)
+
+# Download Thread
 
 class DownloadThread(QThread):
     progress_signal = pyqtSignal(float, float, float, float)
@@ -104,12 +108,24 @@ class DownloadThread(QThread):
         import signal
         os.kill(self.manager._parent_pid, signal.SIGTERM)
 
+# Main Window
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.init_ui()
 
     def init_ui(self):
+        self.create_widgets()
+        self.setup_layouts()
+        self.setup_connections()
+        self.setup_logging()
+
+        self.setWindowTitle("Epic Manifest Downloader")
+        self.resize(500, 250)
+        self.show()
+
+    def create_widgets(self):
         self.url_label = QLabel("Base URL:")
         self.url_edit = QLineEdit("https://epicgames-download1.akamaized.net/Builds/Fortnite/CloudDir/")
         self.manifest_picker_button = QPushButton("Browse")
@@ -127,33 +143,30 @@ class MainWindow(QMainWindow):
         self.console.setReadOnly(True)
         self.download_thread = None
 
-        self.manifest_picker_button.clicked.connect(self.select_manifest)
-        self.download_location_button.clicked.connect(self.browse_download_location)
-        self.download_button.clicked.connect(self.download_file)
-
+    def setup_layouts(self):
         input_layout = QVBoxLayout()
         input_layout.addWidget(self.url_label)
         input_layout.addWidget(self.url_edit)
 
-        input_layout.addWidget(self.manifest_location_label)
         manifest_layout = QHBoxLayout()
         manifest_layout.addWidget(self.manifest_location_edit)
         manifest_layout.addWidget(self.manifest_picker_button)
-        input_layout.addLayout(manifest_layout)
 
-        input_layout.addWidget(self.download_location_label)
         download_layout = QHBoxLayout()
         download_layout.addWidget(self.download_location_edit)
         download_layout.addWidget(self.download_location_button)
-        input_layout.addLayout(download_layout)
 
+        input_layout.addWidget(self.manifest_location_label)
+        input_layout.addLayout(manifest_layout)
+        input_layout.addWidget(self.download_location_label)
+        input_layout.addLayout(download_layout)
         input_layout.addWidget(self.download_button)
 
         progress_layout = QVBoxLayout()
         progress_layout.addWidget(self.progress_label)
         progress_layout.addWidget(self.progress_bar)
         progress_layout.addWidget(self.speed_label)
-    
+
         console_layout = QVBoxLayout()
         console_layout.addWidget(QLabel("Console Output:"))
         console_layout.addWidget(self.console)
@@ -167,13 +180,10 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
 
-        self.setup_logging()
-        self.setWindowTitle("Epic Manifest Downloader")
-
-        self.resize(500, 250)
-
-        self.show()
-
+    def setup_connections(self):
+        self.manifest_picker_button.clicked.connect(self.select_manifest)
+        self.download_location_button.clicked.connect(self.browse_download_location)
+        self.download_button.clicked.connect(self.download_file)
 
     def select_manifest(self):
         manifest_path, _ = QFileDialog.getOpenFileName(
@@ -181,7 +191,6 @@ class MainWindow(QMainWindow):
         )
         self.manifest_location_edit.setText(manifest_path)
         logging.getLogger().info(f"Selected manifest: {manifest_path}")
-
 
     def browse_download_location(self):
         download_dir = QFileDialog.getExistingDirectory(
