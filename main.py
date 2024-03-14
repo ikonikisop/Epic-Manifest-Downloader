@@ -66,14 +66,14 @@ class DownloadThread(QThread):
                 resp = requests.get(self.work_info.manifest, stream=True)
                 data = resp.content
             except requests.RequestException as e:
-                logging.error(f"Error downloading manifest: {e}")
+                logging.error(f"Error Downloading Manifest: {e}")
                 return
         else:
             try:
                 with open(self.work_info.manifest, "rb") as f:
                     data = f.read()
             except FileNotFoundError:
-                logging.error("Manifest file not found.")
+                logging.error("Manifest File Not Found.")
                 return
 
         try:
@@ -82,7 +82,7 @@ class DownloadThread(QThread):
             try:
                 manifest = JSONManifest.read_all(data)
             except Exception as e:
-                logging.error(f"Error parsing manifest: {e}")
+                logging.error(f"Error Parsing Manifest: {e}")
                 return
 
         self.manager.run_analysis(manifest, None, processing_optimization=False)
@@ -122,7 +122,7 @@ class MainWindow(QMainWindow):
         self.setup_logging()
 
         self.setWindowTitle("Epic Manifest Downloader")
-        self.resize(500, 250)
+        self.resize(500, 300)
         self.show()
 
     def create_widgets(self):
@@ -190,11 +190,11 @@ class MainWindow(QMainWindow):
             self, "Select Manifest", filter="Manifest File (*.manifest)"
         )
         self.manifest_location_edit.setText(manifest_path)
-        logging.getLogger().info(f"Selected manifest: {manifest_path}")
+        logging.getLogger().info(f"Selected Manifest: {manifest_path}")
 
     def browse_download_location(self):
         download_dir = QFileDialog.getExistingDirectory(
-            self, "Choose Download Directory"
+            self, "Select Download Directory"
         )
         self.download_location_edit.setText(download_dir)
 
@@ -221,7 +221,7 @@ class MainWindow(QMainWindow):
     def download_finished(self):
         self.download_button.setEnabled(True)
         self.progress_bar.setValue(0)
-        self.progress_label.setText("Download Finished")
+        self.progress_label.setText("Download Finished!")
         self.speed_label.setText("")
         self.download_thread.manager.running = False
         self.download_thread.kill()
