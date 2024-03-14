@@ -20,8 +20,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from legendary.models.manifest import Manifest, ManifestError
-from legendary.models.json_manifest import JSONManifest, JSONManifestError
+from legendary.models.manifest import Manifest
+from legendary.models.json_manifest import JSONManifest
 from legendary.downloader.mp.manager import DLManager
 from legendary.models.downloading import UIUpdate
 
@@ -56,27 +56,37 @@ class DownloadThread(QThread):
         )
 
     def run(self):
-        try:
-            if self.url_regex.match(self.work_info.manifest):
-                logging.info("Downloading manifest from URL...")
+        if self.url_regex.match(self.work_info.manifest):
+            logging.info("Downloading manifest from URL...")
+            try:
                 resp = requests.get(self.work_info.manifest, stream=True)
-                resp.raise_for_status()
                 data = resp.content
-            else:
+            except requests.RequestException as e:
+                logging.error(f"Error downloading manifest: {e}")
+                return
+        else:
+            try:
                 with open(self.work_info.manifest, "rb") as f:
                     data = f.read()
+            except FileNotFoundError:
+                logging.error("Manifest file not found.")
+                return
 
+        try:
+            manifest = Manifest.read_all(data)
+        except Exception:
             try:
-                manifest = Manifest.read_all(data)
-            except ManifestError:
                 manifest = JSONManifest.read_all(data)
+            except Exception as e:
+                logging.error(f"Error parsing manifest: {e}")
+                return
 
-            self.manager.run_analysis(manifest, None, processing_optimization=False)
+        self.manager.run_analysis(manifest, None, processing_optimization=False)
+
+        try:
             self.manager.run()
-
-        except Exception as e:
-            logging.error(f"Error downloading: {e}")
-
+        except SystemExit:
+            pass
         finally:
             self.finished.emit()
 
@@ -184,11 +194,9 @@ class MainWindow(QMainWindow):
         manifest_path = self.manifest_location_edit.text()
         dest_dir = self.download_location_edit.text()
 
-        if not all((url, manifest_path, dest_dir)):
-            logging.error("Incomplete input provided.")
-            return
+        work_info = WorkInfo(url, manifest_path, dest_dir)
 
-        self.download_thread = DownloadThread(url, WorkInfo(url, manifest_path, dest_dir))
+        self.download_thread = DownloadThread(url, work_info)
         self.download_thread.progress_signal.connect(self.update_progress)
         self.download_thread.finished.connect(self.download_finished)
         self.download_thread.start()
@@ -206,9 +214,8 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(0)
         self.progress_label.setText("Download Finished")
         self.speed_label.setText("")
-        if self.download_thread:
-            self.download_thread.manager.running = False
-            self.download_thread.kill()
+        self.download_thread.manager.running = False
+        self.download_thread.kill()
 
     def write_to_console(self, text: str):
         text = text[:-1] if text.endswith("\n") else text
