@@ -205,7 +205,7 @@ class MainWindow(QMainWindow):
         dest_dir = self.download_location_edit.text()
 
         if not url or not manifest_path or not dest_dir:
-            self.write_to_console("Please Fill Out All Fields.")
+            self.write_to_console("Please fill out all fields.")
             return
 
         work_info = WorkInfo(url, manifest_path, dest_dir)
