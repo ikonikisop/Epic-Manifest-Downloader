@@ -1,6 +1,6 @@
 # How To Use Epic Manifest Downloader
 
-1. **Download the Manifest File**: Visit [FN Releases on GitHub](https://github.com/polynite/fn-releases) and download the `.manifest` file relevant to your requirements.
+1. **Download the Manifest File**: Visit [FN Releases](https://github.com/polynite/fn-releases) and download the `.manifest` file relevant to your requirements.
 
 2. **Select the Manifest File**: Once downloaded, locate the downloaded `.manifest` file on your device.
 
