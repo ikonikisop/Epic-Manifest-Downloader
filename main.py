@@ -1,7 +1,7 @@
 import os
 import sys
-import logging
 import re
+import logging
 import multiprocessing
 import requests
 
@@ -40,7 +40,7 @@ class UpdateProgress:
 
 class DownloadThread(QThread):
     progress_signal = pyqtSignal(float, float, float, float)
-    url_regex = "^https?://(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&=/]*)$"
+    url_regex = re.compile("^https?://(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&=/]*)$")
 
     def __init__(self, url, work_info: WorkInfo):
         super().__init__()
@@ -48,7 +48,7 @@ class DownloadThread(QThread):
         self.work_info = work_info
         self.progress_queue = UpdateProgress(self.update_progress)
         self.manager = DLManager(
-            self.work_info.download_location,
+            os.path.join(self.work_info.download_location),
             self.work_info.base_url,
             os.path.join(self.work_info.download_location, ".cache"),
             self.progress_queue,
@@ -56,13 +56,12 @@ class DownloadThread(QThread):
         )
 
     def run(self):
-        is_url = re.match(self.url_regex, self.work_info.manifest)
-        if is_url:
+        if self.url_regex.match(self.work_info.manifest):
             logging.info("Downloading manifest from URL...")
             try:
                 resp = requests.get(self.work_info.manifest, stream=True)
                 data = resp.content
-            except Exception as e:
+            except requests.RequestException as e:
                 logging.error(f"Error downloading manifest: {e}")
                 return
         else:
@@ -88,7 +87,8 @@ class DownloadThread(QThread):
             self.manager.run()
         except SystemExit:
             pass
-        self.finished.emit()
+        finally:
+            self.finished.emit()
 
     def update_progress(self, progress: UIUpdate):
         if progress:
@@ -102,7 +102,6 @@ class DownloadThread(QThread):
 
     def kill(self):
         import signal
-
         os.kill(self.manager._parent_pid, signal.SIGTERM)
 
 class MainWindow(QMainWindow):
@@ -112,9 +111,7 @@ class MainWindow(QMainWindow):
 
     def init_ui(self):
         self.url_label = QLabel("Base URL:")
-        self.url_edit = QLineEdit(
-            "https://epicgames-download1.akamaized.net/Builds/Fortnite/CloudDir/"
-        )
+        self.url_edit = QLineEdit("https://epicgames-download1.akamaized.net/Builds/Fortnite/CloudDir/")
         self.manifest_picker_button = QPushButton("Browse")
         self.manifest_location_label = QLabel("Manifest Location/URL:")
         self.manifest_location_edit = QLineEdit()
@@ -170,7 +167,7 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
 
-        self.setup_stdout_hijack()
+        self.setup_logging()
         self.setWindowTitle("Epic Manifest Downloader")
 
         self.resize(500, 250)
@@ -224,12 +221,11 @@ class MainWindow(QMainWindow):
         text = text[:-1] if text.endswith("\n") else text
         self.console.append(text)
 
-    def setup_stdout_hijack(self):
+    def setup_logging(self):
         stream = LoggerStream()
         stream.newText.connect(self.write_to_console)
 
         logging.basicConfig(level=logging.INFO)
-        logging.getLogger
         dlm = logging.getLogger("DLM")
         dlm.setLevel(logging.INFO)
 
