@@ -1,4 +1,4 @@
-# How To Use Epic Manifest Downloader - Fortnite Example
+# How To Use Epic Manifest Downloader
 
 1. **Download the Manifest File**: Visit [FN Releases on GitHub](https://github.com/polynite/fn-releases) and download the `.manifest` file relevant to your requirements.
 
