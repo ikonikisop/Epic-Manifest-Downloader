@@ -25,13 +25,11 @@ from legendary.models.json_manifest import JSONManifest
 from legendary.downloader.mp.manager import DLManager
 from legendary.models.downloading import UIUpdate
 
-
 class WorkInfo:
     def __init__(self, base_url="", manifest="", download_location=""):
         self.base_url = base_url
         self.manifest = manifest
         self.download_location = download_location
-
 
 class UpdateProgress:
     def __init__(self, callback):
@@ -39,7 +37,6 @@ class UpdateProgress:
 
     def put(self, item, timeout=None):
         self.callback(item)
-
 
 class DownloadThread(QThread):
     progress_signal = pyqtSignal(float, float, float, float)
@@ -68,7 +65,6 @@ class DownloadThread(QThread):
                 with open(self.work_info.manifest, "rb") as manifest_file:
                     data = manifest_file.read()
         except (requests.RequestException, FileNotFoundError) as e:
-            logging.error(f"Error: {e}")
             self.handle_error(f"Error downloading manifest: {e}")
             return
 
@@ -78,7 +74,6 @@ class DownloadThread(QThread):
             try:
                 manifest = JSONManifest.read_all(data)
             except Exception as e:
-                logging.error(f"Error: {e}")
                 self.handle_error(f"Error reading manifest: {e}")
                 return
 
@@ -104,10 +99,9 @@ class DownloadThread(QThread):
     def kill(self):
         import signal
         os.kill(self.manager._parent_pid, signal.SIGTERM)
-        
+
     def handle_error(self, message):
         logging.error(message)
-
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -252,7 +246,6 @@ class MainWindow(QMainWindow):
             self.download_thread.kill()
         super().closeEvent(event)
 
-
 class LoggerStream(QObject):
     newText = pyqtSignal(str)
 
@@ -261,7 +254,6 @@ class LoggerStream(QObject):
 
     def flush(self):
         pass
-
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
