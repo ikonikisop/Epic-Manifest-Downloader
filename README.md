@@ -13,5 +13,5 @@ Feel free to reach out if you encounter any issues or have any questions.
 # Requirements
 `pip install legendary-gl`
 
-# Testing Functionality 9:04 PM - 3/13/24
-Functionality: Functional
+# Testing Functionality 7:55AM - 3/15/24
+Functionality: TBA
