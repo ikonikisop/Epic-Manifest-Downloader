@@ -60,36 +60,35 @@ class DownloadThread(QThread):
 
     def run(self):
         try:
-            if self.url_regex.match(self.work_info.manifest):
-                logging.info("Downloading manifest from URL...")
-                resp = requests.get(self.work_info.manifest, stream=True)
-                data = resp.content
-            else:
-                with open(self.work_info.manifest, "rb") as manifest_file:
-                    data = manifest_file.read()
-        except (requests.RequestException, FileNotFoundError) as e:
-            logging.error(f"Error: {e}")
-            self.handle_error(f"Error downloading manifest: {e}")
-            return
-
-        try:
-            manifest = Manifest.read_all(data)
-        except Exception:
-            try:
-                manifest = JSONManifest.read_all(data)
-            except Exception as e:
-                logging.error(f"Error: {e}")
-                self.handle_error(f"Error reading manifest: {e}")
-                return
-
-        self.manager.run_analysis(manifest, None, processing_optimization=False)
-
-        try:
+            manifest_data = self.download_manifest()
+            manifest = self.parse_manifest(manifest_data)
+            self.manager.run_analysis(manifest, None, processing_optimization=False)
             self.manager.run()
-        except SystemExit:
-            pass
+        except Exception as e:
+            logging.error(f"Error occurred during download: {e}")
+            self.handle_error(f"Error occurred during download: {e}")
         finally:
             self.finished.emit()
+
+    def download_manifest(self):
+        if self.url_regex.match(self.work_info.manifest):
+            logging.info("Downloading manifest from URL...")
+            resp = requests.get(self.work_info.manifest, stream=True)
+            return resp.content
+        else:
+            with open(self.work_info.manifest, "rb") as manifest_file:
+                return manifest_file.read()
+
+    def parse_manifest(self, data):
+        try:
+            return Manifest.read_all(data)
+        except Exception:
+            try:
+                return JSONManifest.read_all(data)
+            except Exception as e:
+                logging.error(f"Error parsing manifest: {e}")
+                self.handle_error(f"Error parsing manifest: {e}")
+                raise
 
     def update_progress(self, progress: UIUpdate):
         if progress:
@@ -104,7 +103,7 @@ class DownloadThread(QThread):
     def kill(self):
         import signal
         os.kill(self.manager._parent_pid, signal.SIGTERM)
-        
+
     def handle_error(self, message):
         logging.error(message)
 
